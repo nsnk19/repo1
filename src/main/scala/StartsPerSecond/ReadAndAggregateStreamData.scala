@@ -50,12 +50,12 @@ case class StartsPerSecond(@JsonProperty(required=true) device: String,
 object ReadAndAggregateStreamData {
 
   implicit val scheduler = Scheduler(executionModel = AlwaysAsyncExecution)
-  val PARSE_STREAM_DATA_PARALLELISM = 10
+  val PARSE_STREAM_DATA_BATCH_SIZE = 10
   val inputStreamURL = "https://tweet-service.herokuapp.com/sps"
 
   /*
     Reads data from stream, splitting up the work of reading and parsing among
-    number of threads determined by PARSE_STREAM_DATA_PARALLELISM, and emitting
+    number of tasks determined by PARSE_STREAM_DATA_BATCH_SIZE, and emitting
     this data in order as an observable (note that no actual work is done
     till the observable is executed in the main method)
    */
@@ -64,7 +64,7 @@ object ReadAndAggregateStreamData {
     val reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"))
 
     Observable.fromLinesReader(reader)
-      .transform(mapParallelOrdered[String, Option[StreamData]](PARSE_STREAM_DATA_PARALLELISM)(parseStreamData(_)))
+      .transform(mapParallelOrdered[String, Option[StreamData]](PARSE_STREAM_DATA_BATCH_SIZE)(parseStreamData(_)))
   }
 
   /*
@@ -117,15 +117,17 @@ object ReadAndAggregateStreamData {
 
   /*
      Creates one Task per computation (Monix Tasks are lazy, so nothing gets executed yet),
-     groups the tasks into batches of size determined by parallelism, using bufferTumbling,
-     waits for entire batch to complete using Task.sequence, which returns a Task[Seq[Q]]
+     groups the tasks into batches of size determined by size, using bufferTumbling,
+     waits for entire batch to complete using Task.gather, which returns a Task[Seq[Q]]
      Then creates Observable using the above Task and flattens Seq[Q], so that Qs get
      emitted downstream one by one (preserving order).
+     Note - Referred to code here:
+     https://softwaremill.com/reactive-streams-in-scala-comparing-akka-streams-and-monix-part-2/
   */
-  def mapParallelOrdered[P, Q](parallelism: Int)(f: P => Task[Q]): Transformer[P, Q] = {
-    _.map(f).bufferTumbling(parallelism).flatMap { tasks =>
+  def mapParallelOrdered[P, Q](size: Int)(f: P => Task[Q]): Transformer[P, Q] = {
+    _.map(f).bufferTumbling(size).flatMap { tasks =>
       Observable
-        .fromTask(Task.sequence(tasks))
+        .fromTask(Task.gather(tasks))
         .concatMap(Observable.fromIterable(_))
     }
   }
