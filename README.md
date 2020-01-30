@@ -6,11 +6,7 @@ and computes counts for these combinations.
 
 # Instructions
 
-## Pre-requisites
-
-### Install Homebrew
-
-- Refer to the [docs](https://brew.sh/)
+** Pre-requisite: Homebrew is installed. If not, refer to the [docs](https://brew.sh/) **
 
 Note that below instructions have been tested on MacOS (version 10.14.6)
 
@@ -46,6 +42,7 @@ start time has been grouped over):
 # Code Organization
 
 `src/main/scala/StartsPerSecond/ReadAndAggregateStreamData.scala` - main client code for parsing and aggregating stream events
+
 `src/main/scala/StartsPerSecond/JSONUtil.scala` - utility library for encoding / decoding JSON
 
 # Assumptions
@@ -70,6 +67,11 @@ run `ReadAndAggregateStreamData` on a partition of the input stream. Alternative
 streaming events to a cluster of hosts within a data center close to the country location of the event.
 Within a cluster we could partition data across hosts based on `(device, title)` attributes.
 
+- For high-availability, we could have an active / passive host setup. The active host does the stream
+processing, while the passive host monitors health of the active host and takes over in case the
+active host becomes unhealthy or goes down. To provide high-availability despite data center outages,
+we would need to have the active / passive hosts in separate data centers.
+
 - To handle varying load over a period of day, assuming we don't need to process the data stream in real-time,
 we could add the stream events to a distributed message queue (such as Kafka or Kinesis). A subset of the stream
 partitions / shards could be assigned to each host for processing. If no host is available to immediately process
@@ -77,5 +79,5 @@ the events in partition / shard, it will remain unassigned till a host becomes a
 checkpoint its progress periodically to avoid reprocessing events if it goes down.
 
 - Testing would include testing under heavy load and testing with uneven distribution of traffic (in
-both time as well as across attributes like country, title, device). I would also test how service opeerates
-in case of brief outages to ensure all events are reliably processed.
+both time as well as across attributes like country, title, device). I would also test how the service operates
+in case of brief outages and ensure all events are reliably processed despite outages.
