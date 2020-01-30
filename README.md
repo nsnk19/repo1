@@ -1,12 +1,12 @@
-# About
+## About
 
 Client that connects to a stream of successful Netflix plays and consumes the events in a streaming fashion.
 The client captures the stream, aggregates it on one second intervals grouped by device, title, country
 and computes counts for these combinations.
 
-# Instructions
+## Instructions
 
-** Pre-requisite: Homebrew is installed. If not, refer to the [docs](https://brew.sh/) **
+**Pre-requisite: Homebrew is installed. If not, refer to the [docs](https://brew.sh/).**
 
 Note that below instructions have been tested on MacOS (version 10.14.6)
 
@@ -26,7 +26,7 @@ curl -o starts_per_second_1-assembly-0.1.jar https://raw.githubusercontent.com/n
 java -jar starts_per_second_1-assembly-0.1.jar
 ```
 
-# Output
+## Output
 
 Output would look like below (note output has a field `timeInSec` to indicate what time in seconds
 start time has been grouped over):
@@ -39,26 +39,26 @@ start time has been grouped over):
 {"device":"ps3","sps":13,"title":"marco polo","country":"USA","timeInSec":1580284452}
 ```
 
-# Code Organization
+## Code Organization
 
 `src/main/scala/StartsPerSecond/ReadAndAggregateStreamData.scala` - main client code for parsing and aggregating stream events
 
 `src/main/scala/StartsPerSecond/JSONUtil.scala` - utility library for encoding / decoding JSON
 
-# Assumptions
+## Assumptions
 
 - Input data that is invalid or incorrectly formatted is ignored.
 - Stream events that contain `"sev":"success"` or `"sev":"successinfo"` are considered successful.
 
 
-# Tools / languages
+## Tools / languages
 
 - The implementation uses Scala as the programming language.
 - It uses Monix (https://monix.io/), a high-performance Scala library for asynchronous, event-based programming.
 - It uses Jackson, a high-performance JSON processor.
 
 
-# Scalability / Reliability
+## Scalability / Reliability notes
 
 - The solution as provided works reliably on a single host. If we wish to scale to a larger number of
 hosts, one way to do so would be to do hash-based partitioning of the input stream data by
