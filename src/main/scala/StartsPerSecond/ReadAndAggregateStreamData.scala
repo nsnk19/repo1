@@ -47,6 +47,7 @@ case class StartsPerSecond(@JsonProperty(required=true) device: String,
 
   def incrementSPS(): StartsPerSecond = copy(sps = sps + 1L)
 }
+
 object ReadAndAggregateStreamData {
 
   implicit val scheduler = Scheduler(executionModel = AlwaysAsyncExecution)
@@ -92,7 +93,7 @@ object ReadAndAggregateStreamData {
    */
   def aggregateStartsPerSecond(in : Observable[Option[StreamData]]): Observable[Option[StartsPerSecond]] = {
     in.filter(b => b.nonEmpty)
-      .groupBy(sd => (sd.get.device, sd.get.title, sd.get.country, sd.get.timeInSec()))
+      .groupBy(sd => (sd.get.device, sd.get.title, sd.get.country, sd.get.timeInSec))
       // Concurrently merge the observables grouped by device, title, country, time
       // into a single observable.
       .mergeMap { case grouped =>
@@ -106,8 +107,8 @@ object ReadAndAggregateStreamData {
             country = country,
             timeInSec = timeInSec))) {
           case (Some(start), Some(streamData)) if (streamData.isSuccessful && streamData.isValid) =>
-            val updatedStart = Some(start.incrementSPS())
-            System.out.println(updatedStart.get.toString())
+            val updatedStart = Some(start.incrementSPS)
+            System.out.println(updatedStart.get.toString)
             updatedStart
           case _ => None
         }
